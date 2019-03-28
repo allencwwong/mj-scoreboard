@@ -84,7 +84,6 @@ class Gameroom extends Component {
       this.props.history.push(`/?uid=${uid}`);
       return <div>exit room</div>;
     } else if (status === "open" && players) {
-      alert("open");
       return (
         <div>
           <h1>Game Room#{gid}</h1>
