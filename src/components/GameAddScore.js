@@ -26,11 +26,15 @@ class GameScoreBoard extends Component {
 
     handleCheckboxChange = changeEvent => {
         const { name, dataset } = changeEvent.target;
+        console.log(dataset.uid);
+        console.log(this.state.checkboxes.checkboxPlayers);
         let uid = dataset.uid,
             isSelected = this.state.checkboxes.checkboxPlayers[uid].isSelected;
         // set selected player info and mark checkbox selected
         let checkboxPlayers = this.state.checkboxes.checkboxPlayers;
         checkboxPlayers[uid].isSelected = !isSelected;
+
+        console.log(this.state.checkboxes.checkboxPlayers);
 
         this.setState({
             checkboxes: {
@@ -84,11 +88,10 @@ class GameScoreBoard extends Component {
     handleFormSubmit = event => {
         event.preventDefault();
         console.log("submit form");
-        const { table, winner, winnerUid } = this.state;
-        let points = this.state.points,
-            isOneWinner = true,
-            winType = "single";
-
+        const { winnerUid } = this.state;
+        let points,
+            winType = "single",
+            status;
         // push score data to firebase
         if (this.state.isRequiredMet) {
             this.gameroomsRef
@@ -109,21 +112,24 @@ class GameScoreBoard extends Component {
                             this.state.checkboxes.checkboxPlayers[uid]
                                 .isSelected === false
                     );
-                    console.log(loserList);
+                    console.log("lose list", loserList);
+                    console.log("NP list", noPointList);
                     if (loserList.length === 3) {
-                        isOneWinner = true;
                         winType = "all";
                     }
+                    // set W/L/NA status for all players
                     Object.keys(playersUid).forEach(uid => {
-                        let status;
                         if (uid === winnerUid) {
                             status = "winner";
+                            points = this.state.points;
                         } else if (loserList.indexOf(uid) > -1) {
                             status = "loser";
+                            points = this.state.points;
                         } else if (noPointList.indexOf(uid) > -1) {
                             status = "NA";
                             points = 0;
                         }
+                        console.log(status, points, winType);
                         this.gameroomsRef
                             .child(`${this.props.gid}/scoreboard/${uid}`)
                             .push({
@@ -163,35 +169,37 @@ class GameScoreBoard extends Component {
 
     componentDidMount() {
         this.gameroomsRef.child(this.props.gid).on("value", snapshot => {
-            let players = snapshot.val().players;
+            let players = snapshot.val().players,
+                playerUids = Object.keys(players),
+                checkboxPlayers = {};
+
             this.setState({
-                players: players,
-                winner: players[this.props.uid].displayName,
                 winnerUid: this.props.uid,
+                winner: players[this.props.uid].displayName,
                 points: 3
             });
-            let playerUids = Object.keys(players);
+
             // reset OPTIONS
             OPTIONS = [];
+            // init checkboxPlayers
             playerUids.forEach((uid, idx, arr) => {
                 if (this.props.uid !== uid) {
-                    let checkboxPlayers =
-                        this.state.checkboxes.checkboxPlayers || {};
                     checkboxPlayers[uid] = {};
                     checkboxPlayers[uid].name = players[uid].displayName;
                     checkboxPlayers[uid].isSelected = false;
+                    console.log(checkboxPlayers);
                     // set options for checkbox
                     OPTIONS.push({
                         uid: uid,
                         name: players[uid].displayName,
                         isSelected: false
                     });
-                    this.setState({
-                        checkboxes: {
-                            checkboxPlayers
-                        }
-                    });
                 }
+                this.setState({
+                    checkboxes: {
+                        checkboxPlayers
+                    }
+                });
                 if (idx === arr.length - 1) {
                     this.setState({
                         isLoad: true

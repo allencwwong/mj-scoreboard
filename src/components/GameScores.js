@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { database } from "../firebase";
 import "./GameScores.css";
+import Table from "react-bootstrap/Table";
 
 class GameScores extends Component {
     constructor(props) {
@@ -72,7 +73,11 @@ class GameScores extends Component {
                             if (!displayRows[idx]) {
                                 displayRows[idx] = "<tr>";
                             }
-                            if (playerScore.winType === "single") {
+
+                            if (
+                                playerScore.winType === "single" &&
+                                playerScore.status !== "NA"
+                            ) {
                                 // calc point value
                                 if (playerScore.status === "winner") {
                                     pointValue = 2 ** (playerScore.points + 2);
@@ -84,7 +89,7 @@ class GameScores extends Component {
                                     displayRows[
                                         idx
                                     ] += `<td>${pointValue}</td>`;
-                                } else {
+                                } else if (playerScore.status === "loser") {
                                     pointValue = -(
                                         2 **
                                         (playerScore.points + 2)
@@ -96,7 +101,10 @@ class GameScores extends Component {
                                         idx
                                     ] += `<td>${pointValue}</td>`;
                                 }
-                            } else if (playerScore.winType === "all") {
+                            } else if (
+                                playerScore.winType === "all" &&
+                                playerScore.status !== "NA"
+                            ) {
                                 // calc point value
                                 if (playerScore.status === "winner") {
                                     pointValue =
@@ -107,7 +115,7 @@ class GameScores extends Component {
                                     displayRows[
                                         idx
                                     ] += `<td>${pointValue}</td>`;
-                                } else {
+                                } else if (playerScore.status === "loser") {
                                     pointValue = -(
                                         2 **
                                         (playerScore.points + 1)
@@ -119,7 +127,15 @@ class GameScores extends Component {
                                         idx
                                     ] += `<td>${pointValue}</td>`;
                                 }
+                            } else if (playerScore.status === "NA") {
+                                // add points to total
+                                playersTotalScore[
+                                    scoreboardKeys[sbTableIdx]
+                                ] += 0;
+                                // display pts in col
+                                displayRows[idx] += "<td>-</td>";
                             }
+
                             // check if it is end of arr
                             if (arr.length - 1 === idx) {
                                 if (!displayRows[idx]) {
@@ -141,6 +157,8 @@ class GameScores extends Component {
                         totalPoints[uid] = playersTotalScore[uid];
                         totalHtml += `<td>${playersTotalScore[uid]}</td>`;
                     });
+
+                    console.log(totalPoints);
 
                     totalHtml += "</tr>";
                     resultsHTML = totalHtml + resultsHTML;
@@ -173,8 +191,8 @@ class GameScores extends Component {
                                                 .photoURL,
                                         playerTotalPoints =
                                             totalPoints[HiLoTotalPointsUid];
-                                    resultsRankingHTML += `<td>Raking:${idx +
-                                        1}<img class="avatar" src="${playerAvatar}"/>${playerName}${playerTotalPoints}</td>`;
+                                    resultsRankingHTML += `<td><div class="ranking">Ranking:${idx +
+                                        1}</div><img class="avatar" src="${playerAvatar}"/><div class="player-name">${playerName}</div><div class="total-points">${playerTotalPoints}</div></td>`;
                                 }
                             );
                             resultsRankingHTML += "</tr>";
@@ -201,15 +219,15 @@ class GameScores extends Component {
         return (
             <React.Fragment>
                 <h2>Rankings</h2>
-                <table className="table">
+                <Table responsive>
                     <thead
                         dangerouslySetInnerHTML={{
                             __html: this.state.resultsRanking
                         }}
                     />
-                </table>
+                </Table>
                 <h2>Scores</h2>
-                <table className="table">
+                <Table responsive>
                     <thead>
                         <tr
                             dangerouslySetInnerHTML={{
@@ -220,7 +238,7 @@ class GameScores extends Component {
                     <tbody
                         dangerouslySetInnerHTML={{ __html: this.state.results }}
                     />
-                </table>
+                </Table>
             </React.Fragment>
         );
     }

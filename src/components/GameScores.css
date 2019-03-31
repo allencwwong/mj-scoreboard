@@ -1,5 +1,24 @@
+.ranking{
+    font-size:20px;
+    font-weight: 600;
+    padding:1rem 0;
+}
 .avatar{
-    width:80px;
-    height:80px;
+    width:40px;
+    height:40px;
     border-radius: 50%;
 }
+.player-name{
+    font-size:18px;
+    padding:.5rem;
+}
+
+.total-points{
+    border-radius: 25px;
+    font-size:20px;
+    font-weight: 600;
+    border:2px solid #333;
+    max-width: 150px;
+    margin:0 auto;
+}
+
