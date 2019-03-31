@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { database } from "../firebase";
+import "./GameScores.css";
 
 class GameScores extends Component {
     constructor(props) {
@@ -15,16 +16,33 @@ class GameScores extends Component {
         let scoreboard,
             scoreboardKeys,
             playersTotalScore = {},
-            pointValue;
+            pointValue,
+            resultsRankingHTML;
 
         let getObjKey = obj => {
             return Object.keys(obj);
         };
 
-        // this.gameroomsRef.child(`${gid}/players`).on("value", snapshot => {
         this.gameroomsRef.child(`${gid}/scoreboard`).on("value", snapshot => {
             if (snapshot.val()) {
                 scoreboard = snapshot.val();
+                this.gameroomsRef
+                    .child(`${gid}/players`)
+                    .once("value", snapshot => {
+                        let playersName = () => {
+                            let displayNamesHTML = "";
+                            let playersUid = getObjKey(scoreboard);
+                            playersUid.forEach(uid => {
+                                displayNamesHTML += `<td>${
+                                    snapshot.val()[uid].displayName
+                                }</td>`;
+                            });
+                            return displayNamesHTML;
+                        };
+                        this.setState({
+                            playersName: playersName()
+                        });
+                    });
 
                 // organize db data to table format
                 let sbTable = [];
@@ -45,7 +63,7 @@ class GameScores extends Component {
                 });
 
                 // set up table display with calc
-                let results = () => {
+                let results = (() => {
                     let resultsHTML = "";
                     let displayRows = {};
                     sbTable.forEach((playerAllScores, sbTableIdx) => {
@@ -115,18 +133,61 @@ class GameScores extends Component {
                         resultsHTML += displayRows[rowId];
                     });
 
+                    // get total score and add as first row
                     let totalHtml = "<tr>";
+                    // set total points
+                    let totalPoints = {};
                     getObjKey(playersTotalScore).forEach(uid => {
+                        totalPoints[uid] = playersTotalScore[uid];
                         totalHtml += `<td>${playersTotalScore[uid]}</td>`;
                     });
+
                     totalHtml += "</tr>";
                     resultsHTML = totalHtml + resultsHTML;
 
-                    return resultsHTML;
-                };
+                    // get player info and setup ranking display
+                    this.gameroomsRef
+                        .child(`${gid}/players`)
+                        .on("value", snapshot => {
+                            let playersList = snapshot.val();
+                            // sort total points
+                            let sortedTotalPoints = getObjKey(playersList).sort(
+                                (uidA, uidB) => {
+                                    console.log(totalPoints[uidB]);
+                                    return (
+                                        totalPoints[uidB] - totalPoints[uidA]
+                                    );
+                                }
+                            );
+                            // render ranking
+                            // '<tr><td>ranking #</td></tr>'
+                            // '<tr><td>avatar / name </td></tr>'
+                            resultsRankingHTML = "<tr>";
+                            sortedTotalPoints.forEach(
+                                (HiLoTotalPointsUid, idx) => {
+                                    let playerName =
+                                            playersList[HiLoTotalPointsUid]
+                                                .displayName,
+                                        playerAvatar =
+                                            playersList[HiLoTotalPointsUid]
+                                                .photoURL,
+                                        playerTotalPoints =
+                                            totalPoints[HiLoTotalPointsUid];
+                                    resultsRankingHTML += `<td>Raking:${idx +
+                                        1}<img class="avatar" src="${playerAvatar}"/>${playerName}${playerTotalPoints}</td>`;
+                                }
+                            );
+                            resultsRankingHTML += "</tr>";
+                        });
 
+                    return {
+                        resultScore: resultsHTML,
+                        resultRanking: resultsRankingHTML
+                    };
+                })();
                 this.setState({
-                    results: results()
+                    results: results.resultScore,
+                    resultsRanking: results.resultRanking
                 });
             } else {
                 this.setState({
@@ -134,12 +195,33 @@ class GameScores extends Component {
                 });
             }
         });
-        // });
     }
 
     render() {
         return (
-            <tbody dangerouslySetInnerHTML={{ __html: this.state.results }} />
+            <React.Fragment>
+                <h2>Rankings</h2>
+                <table className="table">
+                    <thead
+                        dangerouslySetInnerHTML={{
+                            __html: this.state.resultsRanking
+                        }}
+                    />
+                </table>
+                <h2>Scores</h2>
+                <table className="table">
+                    <thead>
+                        <tr
+                            dangerouslySetInnerHTML={{
+                                __html: this.state.playersName
+                            }}
+                        />
+                    </thead>
+                    <tbody
+                        dangerouslySetInnerHTML={{ __html: this.state.results }}
+                    />
+                </table>
+            </React.Fragment>
         );
     }
 }

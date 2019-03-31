@@ -53,31 +53,10 @@ class GameScoreBoard extends Component {
         let modalClose = () => this.setState({ modalShow: false });
 
         if (this.state.isLoaded) {
-            const { players } = this.state;
-            let playersKeys = Object.keys(players);
-            let renderPlayerList = () => {
-                let playerList = [];
-                playersKeys.forEach(playerKey => {
-                    playerList.push(
-                        <th key={playerKey}>
-                            {players[playerKey].displayName}{" "}
-                        </th>
-                    );
-                });
-                return playerList;
-            };
             return (
-                <div>
-                    <h1>GameScoreBoard</h1>
-                    <h2>Ranking</h2>
-                    <table className="table" />
-                    <h2>Scores</h2>
-                    <table className="table">
-                        <thead>
-                            <tr>{renderPlayerList()}</tr>
-                        </thead>
-                        <GameScores gid={this.props.gid} />
-                    </table>
+                <React.Fragment>
+                    <GameScores gid={this.props.gid} />
+
                     <div className="container">
                         <div className="row">
                             <div className="col-md-2">
@@ -123,7 +102,7 @@ class GameScoreBoard extends Component {
                         uid={this.props.uid}
                         gid={this.props.gid}
                     />
-                </div>
+                </React.Fragment>
             );
         }
         return <div>loading scoreboard...</div>;
