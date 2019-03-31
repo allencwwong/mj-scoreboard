@@ -84,79 +84,56 @@ class GameScoreBoard extends Component {
     handleFormSubmit = event => {
         event.preventDefault();
         console.log("submit form");
-        const { points, table, winner, winnerUid } = this.state;
-        let roundResults,
-            roundScorers = {};
+        const { table, winner, winnerUid } = this.state;
+        let points = this.state.points,
+            isOneWinner = true,
+            winType = "single";
 
-        Object.keys(this.state.checkboxes.checkboxPlayers)
-            .filter(
-                uid =>
-                    this.state.checkboxes.checkboxPlayers[uid].isSelected ===
-                    true
-            )
-            .forEach(uid => {
-                console.log(this.state.checkboxes.checkboxPlayers[uid]);
-                let playerList = this.state.checkboxes.checkboxPlayers[uid];
-                roundScorers[uid] = {
-                    name: playerList.name,
-                    status: "loser"
-                };
-            });
-
-        roundScorers[winnerUid] = {
-            name: winner,
-            status: "winner"
-        };
-
-        roundResults = () => {
-            let results = {};
-            Object.keys(roundScorers).forEach((uid, idx, arr) => {
-                if (roundScorers[uid].status === "winner") {
-                    results[uid] = {
-                        name: roundScorers[uid].name,
-                        points: this.state.points,
-                        status: roundScorers[uid].status,
-                        table: null
-                    };
-                    if (arr.length <= 2) {
-                        // refactor to create calc score instead of copy and pasting
-                        results[uid].pointsValue = 2 ** (this.state.points + 2);
-                    } else {
-                        results[uid].pointsValue =
-                            2 ** (this.state.points + 1) * 3;
-                    }
-                } else {
-                    results[uid] = {
-                        name: roundScorers[uid].name,
-                        points: this.state.points,
-                        status: roundScorers[uid].status,
-                        table: null
-                    };
-                    if (arr.length <= 2) {
-                        results[uid].pointsValue = -(
-                            2 **
-                            (this.state.points + 2)
-                        );
-                    } else {
-                        results[uid].pointsValue = -(
-                            2 **
-                            (this.state.points + 1)
-                        );
-                    }
-                }
-            });
-            return results;
-        };
-
-        console.log(this.state);
-        console.log(roundResults());
-
+        // push score data to firebase
         if (this.state.isRequiredMet) {
-            this.gameroomsRef.child(`${this.props.gid}/scoreboard`).push({
-                points: points,
-                scores: roundResults(),
-                table: null
-            });
+            this.gameroomsRef
+                .child(`${this.props.gid}/players`)
+                .on("value", snapshot => {
+                    let playersUid = snapshot.val();
+                    let loserList = Object.keys(
+                        this.state.checkboxes.checkboxPlayers
+                    ).filter(
+                        uid =>
+                            this.state.checkboxes.checkboxPlayers[uid]
+                                .isSelected === true
+                    );
+                    let noPointList = Object.keys(
+                        this.state.checkboxes.checkboxPlayers
+                    ).filter(
+                        uid =>
+                            this.state.checkboxes.checkboxPlayers[uid]
+                                .isSelected === false
+                    );
+                    console.log(loserList);
+                    if (loserList.length === 3) {
+                        isOneWinner = true;
+                        winType = "all";
+                    }
+                    Object.keys(playersUid).forEach(uid => {
+                        let status;
+                        if (uid === winnerUid) {
+                            status = "winner";
+                        } else if (loserList.indexOf(uid) > -1) {
+                            status = "loser";
+                        } else if (noPointList.indexOf(uid) > -1) {
+                            status = "NA";
+                            points = 0;
+                        }
+                        this.gameroomsRef
+                            .child(`${this.props.gid}/scoreboard/${uid}`)
+                            .push({
+                                status: status,
+                                points: points,
+                                winType: winType
+                            });
+                    });
+                });
+
             // set reset checkBoxes , isRequiredMet
             this.setState({
                 checkedBoxes: 0,

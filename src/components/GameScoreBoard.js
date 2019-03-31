@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { database } from "../firebase";
+import { withRouter } from "react-router-dom";
 import GameAddScore from "./GameAddScore";
 import GameScores from "./GameScores";
 
@@ -7,11 +8,37 @@ class GameScoreBoard extends Component {
     constructor(props) {
         super(props);
         this.gameroomsRef = database.ref("/gamerooms");
+        this.ingameUsers = database.ref("/ingameusers");
         this.state = {
             isLoaded: false,
             modalShow: false
         };
     }
+
+    handleEndGameClick = () => {
+        this.gameroomsRef.child(`${this.props.gid}`).on("value", snapshot => {
+            let host = snapshot.val().host,
+                playersList = snapshot.val().players,
+                statusPath = `${this.props.gid}/status`;
+            // check if host clicked
+            if (this.props.uid === host) {
+                // remove all in game players from gid
+                console.log(playersList);
+                let playersUid = Object.keys(playersList);
+                playersUid.forEach(uid => {
+                    this.ingameUsers.child(uid).remove();
+                });
+                // change status to ended
+                this.gameroomsRef.child(statusPath).set("ended");
+                // redirect to home
+                this.props.history.push("/");
+                console.log("end game");
+            } else {
+                alert("only host can end game!");
+            }
+        });
+    };
+
     componentDidMount() {
         const gid = window.location.pathname.split("/")[2];
         this.gameroomsRef.child(gid).on("value", snapshot => {
@@ -42,6 +69,9 @@ class GameScoreBoard extends Component {
             return (
                 <div>
                     <h1>GameScoreBoard</h1>
+                    <h2>Ranking</h2>
+                    <table className="table" />
+                    <h2>Scores</h2>
                     <table className="table">
                         <thead>
                             <tr>{renderPlayerList()}</tr>
@@ -75,7 +105,12 @@ class GameScoreBoard extends Component {
                                 </button>
                             </div>
                             <div className="col-md-2">
-                                <button className="btn btn-danger w-100">
+                                <button
+                                    onClick={() => {
+                                        this.handleEndGameClick();
+                                    }}
+                                    className="btn btn-danger w-100"
+                                >
                                     End game
                                 </button>
                             </div>
@@ -95,4 +130,4 @@ class GameScoreBoard extends Component {
     }
 }
 
-export default GameScoreBoard;
+export default withRouter(GameScoreBoard);
