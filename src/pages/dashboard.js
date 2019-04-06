@@ -156,6 +156,19 @@ class Dashboard extends Component {
                 ) : (
                     ""
                 )}
+                <Row>
+                    <Col sm={12}>
+                        <h2>Upcoming patch features:</h2>
+                        <ul>
+                            <li>edit existing score</li>
+                            <li>input score checker</li>
+                            <li>end game confirmation</li>
+                            <li>game history</li>
+                            <li>10+ $$ calc</li>
+                            <li>early leave / late auto penalty calc</li>
+                        </ul>
+                    </Col>
+                </Row>
             </Container>
         );
     }
