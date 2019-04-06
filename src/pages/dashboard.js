@@ -158,7 +158,7 @@ class Dashboard extends Component {
                 )}
                 <Row>
                     <Col sm={12}>
-                        <h2>Upcoming patch fixes:</h2>
+                        <h4>Upcoming patch fixes:</h4>
                         <ul>
                             <li>edit existing score</li>
                             <li>input score checker</li>
