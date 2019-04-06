@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
 import { database, auth } from "../firebase";
+import { Col, Row, Container, Card } from "react-bootstrap";
 import "./dashboard.css";
 
 class Dashboard extends Component {
@@ -9,7 +10,8 @@ class Dashboard extends Component {
         this.gameroomsRef = database.ref("/gamerooms");
         this.inGameUsers = database.ref("/ingameusers");
         this.state = {
-            user: this.props.user
+            user: this.props.user,
+            isInGame: false
         };
     }
 
@@ -53,6 +55,27 @@ class Dashboard extends Component {
         });
     };
 
+    componentDidMount() {
+        console.log(this.inGameUsers);
+        this.inGameUsers.on("value", snapshot => {
+            if (snapshot.exists()) {
+                if (snapshot.val()[this.state.user.uid]) {
+                    let ingameUserGid = snapshot.val()[this.state.user.uid].gid;
+                    this.gameroomsRef
+                        .child(ingameUserGid)
+                        .on("value", snapshot => {
+                            this.setState({
+                                gid: ingameUserGid,
+                                players: snapshot.val().players,
+                                isInGame: true,
+                                status: snapshot.val().status
+                            });
+                        });
+                }
+            }
+        });
+    }
+
     render() {
         const { user } = this.state;
         console.log(
@@ -64,36 +87,76 @@ class Dashboard extends Component {
             user.photoURL
         );
         return (
-            <div>
+            <Container>
                 welcome,
                 {user.displayName} ,{" "}
                 <a href="#" onClick={this.handleLogOut}>
                     logout
                 </a>
-                <div className="row">
-                    <button
-                        onClick={this.createGameRoom}
-                        className="btn btn-primary"
-                    >
-                        Create new game
-                    </button>
-                    <Link
-                        to={{
-                            pathname: "/join",
-                            state: {
-                                user: {
-                                    email: user.email,
-                                    uid: user.uid,
-                                    displayName: user.displayName,
-                                    photoURL: user.photoURL
+                {this.state.isInGame ? (
+                    ""
+                ) : (
+                    <Row>
+                        <button
+                            onClick={this.createGameRoom}
+                            className="btn btn-primary"
+                        >
+                            Create new game
+                        </button>
+                        <Link
+                            to={{
+                                pathname: "/join",
+                                state: {
+                                    user: {
+                                        email: user.email,
+                                        uid: user.uid,
+                                        displayName: user.displayName,
+                                        photoURL: user.photoURL
+                                    }
                                 }
-                            }
-                        }}
-                    >
-                        <button className="btn btn-primary">Join game</button>
-                    </Link>
-                </div>
-            </div>
+                            }}
+                        >
+                            <button className="btn btn-primary">
+                                Join game
+                            </button>
+                        </Link>
+                    </Row>
+                )}
+                {this.state.isInGame ? (
+                    <Row>
+                        <Col sm={12}>
+                            <Link
+                                to={`/gameroom/${this.state.gid}/?uid=${
+                                    this.state.user.uid
+                                }`}
+                            >
+                                <Card body>
+                                    <Row>
+                                        <Col>Game: {this.state.gid}</Col>
+                                    </Row>
+                                    <Row>
+                                        <Col>
+                                            Players:
+                                            {Object.keys(this.state.players)
+                                                .map(key => {
+                                                    return this.state.players[
+                                                        key
+                                                    ].displayName;
+                                                })
+                                                .join(" ")}
+                                        </Col>
+                                    </Row>
+                                    <Row>
+                                        <Col>Status: {this.state.status}</Col>
+                                    </Row>
+                                </Card>
+                            </Link>
+                        </Col>
+                    </Row>
+                ) : (
+                    ""
+                )}
+            </Container>
         );
     }
 }

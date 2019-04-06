@@ -37,7 +37,7 @@ class GamePreStart extends Component {
             .child(`${this.props.gid}/players`)
             .on("value", snapshot => {
                 let playerAmount = Object.keys(snapshot.val()).length;
-                if (playerAmount < 2) {
+                if (playerAmount < 0) {
                     alert("need at least 4 to start!");
                 } else {
                     //change status to started

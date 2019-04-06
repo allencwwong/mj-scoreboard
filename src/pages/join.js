@@ -15,7 +15,8 @@ class Join extends Component {
     componentDidMount() {
         this.gameroomsRef
             .orderByChild("status")
-            .equalTo("open")
+            .startAt("open")
+            .endAt("started")
             .on("value", snapshot => {
                 if (snapshot.val()) {
                     this.setState({
